@@ -1,12 +1,13 @@
-"""CPU functionality."""
-
 # opcodes
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
 MUL = 0b10100010
-POP = 0b11111111 # update
-PUSH = 0b11111111  # update
+POP = 0b01000110 
+PUSH = 0b01000101
+"""CPU functionality."""
+
+
 
 import sys
 
@@ -15,16 +16,18 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
+        #CAPS indicates a CPU Attribute
         self.RAM = [0] * 256
-        self.REG = [0]* 8
+        self.REG = [0, 0, 0, 0, 0, 0, 0, 0xF3]
         self.PC = 0
         self.HALTED = False
-        
-    def ram_write(self, MDR, MAR):
-        self.RAM[MAR] = MDR
 
-    def ram_read(self, MAR):
-        return self.RAM[MAR]
+        
+    def ram_write(self, mdr, mar):
+        self.RAM[mar] = mdr
+
+    def ram_read(self, mar):
+        return self.RAM[mar]
 
     def load(self, filename):
         """Load a program into memory."""
@@ -88,6 +91,8 @@ class CPU:
             operand_a = self.ram_read(self.PC + 1)
             operand_b = self.ram_read(self.PC + 2)
 
+            # self.branch_table.run(IR, operand_a, operand_b)
+
             if IR == HLT:
                 self.HALTED = True
             elif IR == LDI:
@@ -95,33 +100,15 @@ class CPU:
             elif IR == PRN:
                 print(self.REG[operand_a])
             elif IR == MUL:
-                self.alu("MUL", operand_a, operand_b) 
-                
-            elif IR == PUSH: ## to be fixed
-                pass
-                # reg_index_a = memory[pc + 1]
-                # val = register[reg_index]
-                # # decrement stack pointer
-                # registers[SP] -= 1
-                # # insert val into stack
-                # memory[registers[SP]] = val
-
-                # self.PC += 2
-
-            elif IR == POP: ## to be fixed
-                pass
-                # #setup
-                # reg_index_a = memory[pc + 1]
-                # val = memory[registers[SP]]
-
-                # # take val from  stack and put in reg
-                # registers[reg_index] = val
-
-                # # increment stack pointer
-                # registers[SP] += 1
-
-                # self.PC += 2
-
+                self.alu("MUL", operand_a, operand_b)
+            elif IR == PUSH:
+                self.REG[7] -= 1
+                self.RAM[self.REG[7]] = self.REG[operand_a]
+                self.REG[operand_a] = 0
+            elif IR == POP:
+                self.REG[operand_a] = self.RAM[self.REG[7]]
+                self.RAM[self.REG[7]] = 0
+                self.REG[7] += 1
             else:
                 print("Ended due to unknown command: self.IR == ?")
                 self.running = False
