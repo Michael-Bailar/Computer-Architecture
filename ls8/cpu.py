@@ -7,7 +7,53 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.RAM = [0] * 256
+        self.REG = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.PC = 0
+        self.IR = 0
+        self.MAR = 0
+        self.MDR = 0
+        self.FL = 0
+        self.running = False
+        
+
+    def ram_read(self):
+        self.MDR = self.RAM[self.MAR]
+
+    def ram_write(self):
+        self.RAM[self.MAR] = self.MDR
+
+    def run(self):
+        """Run the CPU."""
+        self.running = True
+
+
+
+        LDI = 0b10000010
+        PRN = 0b01000111
+        HLT = 0b00000001
+
+        while self.running:
+
+            self.IR = self.RAM[self.PC]
+            self.MAR = self.PC
+            self.MAR = self.PC + 1
+            self.ram_read() # MDR Becomes the thing at ram[MAR]
+            operand_a = self.MDR
+            self.MAR = self.PC + 2
+            self.ram_read() # MDR Becomes the thing at ram[MAR]
+            operand_b = self.MDR
+            if self.IR == HLT:
+                self.running = False
+            elif self.IR == PRN:
+                print(self.REG[operand_a])
+                self.PC += 2
+            elif self.IR == LDI:
+                self.REG[operand_a] = operand_b
+                self.PC += 3
+            else:
+                print("I don't know that command")
+
 
     def load(self):
         """Load a program into memory."""
@@ -18,6 +64,7 @@ class CPU:
 
         program = [
             # From print8.ls8
+            
             0b10000010, # LDI R0,8
             0b00000000,
             0b00001000,
@@ -27,7 +74,7 @@ class CPU:
         ]
 
         for instruction in program:
-            self.ram[address] = instruction
+            self.RAM[address] = instruction
             address += 1
 
 
@@ -35,31 +82,28 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.REG[reg_a] += self.REG[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
 
-    def trace(self):
-        """
-        Handy function to print out the CPU state. You might want to call this
-        from run() if you need help debugging.
-        """
+    # def trace(self):
+    #     """
+    #     Handy function to print out the CPU state. You might want to call this
+    #     from run() if you need help debugging.
+    #     """
 
-        print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.pc,
-            #self.fl,
-            #self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
-        ), end='')
+    #     print(f"TRACE: %02X | %02X %02X %02X |" % (
+    #         self.PC,
+    #         #self.fl,
+    #         #self.ie,
+    #         self.ram_read(self.PC),
+    #         self.ram_read(self.PC + 1),
+    #         self.ram_read(self.PC + 2)
+    #     ), end='')
 
-        for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+        # for i in range(8):
+        #     print(" %02X" % self.REG[i], end='')
 
-        print()
+        # print()
 
-    def run(self):
-        """Run the CPU."""
-        pass
