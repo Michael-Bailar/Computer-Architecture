@@ -5,11 +5,33 @@ HLT = 0b00000001
 MUL = 0b10100010
 POP = 0b01000110 
 PUSH = 0b01000101
+CALL = 0b01010000
+RET = 0b00010001
+ADD = 0b10100000
+SUB = 0b10100001
+DIV = 0b10100011
+
 """CPU functionality."""
 
 
 
 import sys
+
+# class Branch_Table:
+#     def __init__(self):
+#         self.branchtable = {}
+#         self.branchtable[0b00000001] = self.handle_HLT
+#         self.branchtable[0b10100010] = self.handle_MUL
+
+#     def handle_HLT(self):
+#         self.HALTED = True
+    
+#     def handle_MUL(self, a, b):
+#         self.alu("MUL", operand_a, operand_b)
+
+#     def run(self, IR):
+#         IR = HLT
+#         self.branchtable[IR] = "foo"
 
 class CPU:
     """Main CPU class."""
@@ -21,8 +43,23 @@ class CPU:
         self.REG = [0, 0, 0, 0, 0, 0, 0, 0xF3]
         self.PC = 0
         self.HALTED = False
+        self.SP = self.REG[7]
+        #Initialize branch table
+        self.BT = {
+            0b10000010: self.handle_LDI,
+            0b01000111: self.handle_PRN,
+            0b00000001: self.handle_HLT,
+            0b10100000: self.handle_ADD,
+            0b10100001: self.handle_SUB,
+            0b10100010: self.handle_MUL,
+            0b10100011: self.handle_DIV,
+            0b01000101: self.handle_PUSH,
+            0b01000110: self.handle_POP,
+            0b01010000: self.handle_CALL,
+            0b00010001: self.handle_RET
+        }
 
-        
+
     def ram_write(self, mdr, mar):
         self.RAM[mar] = mdr
 
@@ -88,29 +125,74 @@ class CPU:
         while not self.HALTED:
             IR = self.RAM[self.PC]
             instruction_length = ((IR >> 6) & 0b11) + 1
-            operand_a = self.ram_read(self.PC + 1)
-            operand_b = self.ram_read(self.PC + 2)
-
-            # self.branch_table.run(IR, operand_a, operand_b)
-
-            if IR == HLT:
-                self.HALTED = True
-            elif IR == LDI:
-                self.REG[operand_a] = operand_b
-            elif IR == PRN:
-                print(self.REG[operand_a])
-            elif IR == MUL:
-                self.alu("MUL", operand_a, operand_b)
-            elif IR == PUSH:
-                self.REG[7] -= 1
-                self.RAM[self.REG[7]] = self.REG[operand_a]
-                self.REG[operand_a] = 0
-            elif IR == POP:
-                self.REG[operand_a] = self.RAM[self.REG[7]]
-                self.RAM[self.REG[7]] = 0
-                self.REG[7] += 1
-            else:
-                print("Ended due to unknown command: self.IR == ?")
-                self.running = False
-
+            self.BT[IR]()
             self.PC += instruction_length
+
+
+    ## ALL INSTRUCTION COMMANDS ##
+    def handle_LDI(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.REG[operand_a] = operand_b
+    def handle_PRN(self):
+        operand_a = self.ram_read(self.PC + 1)
+        print(self.REG[operand_a])
+    def handle_HLT(self):
+        self.HALTED = True
+    def handle_ADD(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("ADD", operand_a, operand_b)
+    def handle_SUB(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("SUB", operand_a, operand_b)
+    def handle_MUL(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("MUL", operand_a, operand_b)
+    def handle_DIV(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("DIV", operand_a, operand_b)
+    def handle_PUSH(self):
+        operand_a = self.ram_read(self.PC + 1)
+        self.REG[7] -= 1
+        self.RAM[self.REG[7]] = self.REG[operand_a]
+        self.REG[operand_a] = 0
+    def handle_POP(self):
+        operand_a = self.ram_read(self.PC + 1)
+        self.REG[operand_a] = self.RAM[self.REG[7]]
+        self.REG[7] += 1
+    def handle_CALL(self):
+        pass
+    def handle_RET(self):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+        # elif IR == ADD:
+        #     self.alu("ADD", operand_a, operand_b)
+        # elif IR == SUB:
+        #     self.alu("SUB", operand_a, operand_b)
+        # elif IR == DIV:
+        #     self.alu("DIV", operand_a, operand_b)
+        # elif IR == PUSH:
+        #     self.REG[7] -= 1
+        #     self.RAM[self.REG[7]] = self.REG[operand_a]
+        #     self.REG[operand_a] = 0
+        # elif IR == POP:
+        #     self.REG[operand_a] = self.RAM[self.REG[7]]
+        #     self.RAM[self.REG[7]] = 0
+        #     self.REG[7] += 1
+        # else:
+        #     print("Ended due to unknown command: self.IR == ?")
+        #     self.running = False        
