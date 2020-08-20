@@ -1,37 +1,5 @@
-# opcodes
-LDI = 0b10000010
-PRN = 0b01000111
-HLT = 0b00000001
-MUL = 0b10100010
-POP = 0b01000110 
-PUSH = 0b01000101
-CALL = 0b01010000
-RET = 0b00010001
-ADD = 0b10100000
-SUB = 0b10100001
-DIV = 0b10100011
-
 """CPU functionality."""
-
-
-
 import sys
-
-# class Branch_Table:
-#     def __init__(self):
-#         self.branchtable = {}
-#         self.branchtable[0b00000001] = self.handle_HLT
-#         self.branchtable[0b10100010] = self.handle_MUL
-
-#     def handle_HLT(self):
-#         self.HALTED = True
-    
-#     def handle_MUL(self, a, b):
-#         self.alu("MUL", operand_a, operand_b)
-
-#     def run(self, IR):
-#         IR = HLT
-#         self.branchtable[IR] = "foo"
 
 class CPU:
     """Main CPU class."""
@@ -53,12 +21,12 @@ class CPU:
             0b10100001: self.handle_SUB,
             0b10100010: self.handle_MUL,
             0b10100011: self.handle_DIV,
+            0b10101000: self.handle_AND,
             0b01000101: self.handle_PUSH,
             0b01000110: self.handle_POP,
             0b01010000: self.handle_CALL,
             0b00010001: self.handle_RET
         }
-
 
     def ram_write(self, mdr, mar):
         self.RAM[mar] = mdr
@@ -88,7 +56,6 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
         if op == "ADD":
             self.REG[reg_a] += self.REG[reg_b]
         elif op == "SUB":
@@ -97,6 +64,8 @@ class CPU:
             self.REG[reg_a] = self.REG[reg_a] * self.REG[reg_b]
         elif op == "DIV":
             self.REG[reg_a] //= self.REG[reg_b]
+        elif op == "AND":
+            self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -125,9 +94,8 @@ class CPU:
         while not self.HALTED:
             IR = self.RAM[self.PC]
             instruction_length = ((IR >> 6) & 0b11) + 1
-            self.BT[IR]()
+            self.BT[IR]() #grab the appropriate function from the branch table
             self.PC += instruction_length
-
 
     ## ALL INSTRUCTION COMMANDS ##
     def handle_LDI(self):
@@ -155,6 +123,10 @@ class CPU:
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("DIV", operand_a, operand_b)
+    def handle_AND(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("AND", operand_a, operand_b)
     def handle_PUSH(self):
         operand_a = self.ram_read(self.PC + 1)
         self.REG[7] -= 1
@@ -168,31 +140,3 @@ class CPU:
         pass
     def handle_RET(self):
         pass
-
-
-
-
-
-
-
-
-
-
-
-        # elif IR == ADD:
-        #     self.alu("ADD", operand_a, operand_b)
-        # elif IR == SUB:
-        #     self.alu("SUB", operand_a, operand_b)
-        # elif IR == DIV:
-        #     self.alu("DIV", operand_a, operand_b)
-        # elif IR == PUSH:
-        #     self.REG[7] -= 1
-        #     self.RAM[self.REG[7]] = self.REG[operand_a]
-        #     self.REG[operand_a] = 0
-        # elif IR == POP:
-        #     self.REG[operand_a] = self.RAM[self.REG[7]]
-        #     self.RAM[self.REG[7]] = 0
-        #     self.REG[7] += 1
-        # else:
-        #     print("Ended due to unknown command: self.IR == ?")
-        #     self.running = False        
