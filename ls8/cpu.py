@@ -106,6 +106,8 @@ class CPU:
         while not self.HALTED:
             IR = self.RAM[self.PC]
             instruction_length = ((IR >> 6) & 0b11) + 1
+            if IR == 0b00010001 or IR == 0b01010000:
+                instruction_length = 0
             self.BT[IR]() #grab the appropriate function from the branch table
             self.PC += instruction_length
 
@@ -137,7 +139,8 @@ class CPU:
         self.alu("DIV", operand_a, operand_b)
     def handle_DEC(self):
         operand_a = self.ram_read(self.PC + 1)
-        self.alu("DEC", operand_a)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("DEC", operand_a, operand_b)
     def handle_AND(self):
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
@@ -156,6 +159,12 @@ class CPU:
         self.REG[operand_a] = self.RAM[self.REG[7]]
         self.REG[7] += 1
     def handle_CALL(self):
-        pass
+        operand_a = self.ram_read(self.PC + 1)
+        #put return location on the stack
+        self.REG[7] -= 1
+        self.RAM[self.REG[7]] = self.PC + 2
+        #move to location stored in reg
+        self.PC = self.REG[operand_a]
     def handle_RET(self):
-        pass
+        self.PC = self.RAM[self.REG[7]]
+        self.REG[7] += 1
