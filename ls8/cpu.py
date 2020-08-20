@@ -12,6 +12,7 @@ class CPU:
         self.PC = 0
         self.HALTED = False
         self.SP = self.REG[7]
+        self.FL = 0
         #Initialize branch table
         self.BT = {
             0b10000010: self.handle_LDI,
@@ -21,7 +22,9 @@ class CPU:
             0b10100001: self.handle_SUB,
             0b10100010: self.handle_MUL,
             0b10100011: self.handle_DIV,
+            0b01100110: self.handle_DEC,
             0b10101000: self.handle_AND,
+            0b10100111: self.handle_CMP,
             0b01000101: self.handle_PUSH,
             0b01000110: self.handle_POP,
             0b01010000: self.handle_CALL,
@@ -64,8 +67,17 @@ class CPU:
             self.REG[reg_a] = self.REG[reg_a] * self.REG[reg_b]
         elif op == "DIV":
             self.REG[reg_a] //= self.REG[reg_b]
+        elif op == "DEC":
+            self.REG[reg_a] += 1
         elif op == "AND":
             self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
+        elif op == "CMP":
+            if self.REG[reg_a] == self.REG[reg_b]:
+                self.FL = 0b00000001
+            elif self.REG[reg_a] > self.REG[reg_b]:
+                self.FL = 0b00000010
+            elif self.REG[reg_a] < self.REG[reg_b]:
+                self.FL = 0b00000100
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -123,10 +135,17 @@ class CPU:
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("DIV", operand_a, operand_b)
+    def handle_DEC(self):
+        operand_a = self.ram_read(self.PC + 1)
+        self.alu("DEC", operand_a)
     def handle_AND(self):
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("AND", operand_a, operand_b)
+    def handle_CMP(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("CMP", operand_a, operand_b)
     def handle_PUSH(self):
         operand_a = self.ram_read(self.PC + 1)
         self.REG[7] -= 1
