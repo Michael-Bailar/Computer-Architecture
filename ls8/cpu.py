@@ -28,7 +28,8 @@ class CPU:
             0b01000101: self.handle_PUSH,
             0b01000110: self.handle_POP,
             0b01010000: self.handle_CALL,
-            0b00010001: self.handle_RET
+            0b00010001: self.handle_RET,
+            0b10000100: self.handle_ST,
         }
 
     def ram_write(self, mdr, mar):
@@ -168,3 +169,7 @@ class CPU:
     def handle_RET(self):
         self.PC = self.RAM[self.REG[7]]
         self.REG[7] += 1
+    def handle_ST(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.REG[operand_b] = self.REG[operand_a]
