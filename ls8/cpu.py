@@ -14,6 +14,7 @@ class CPU:
         self.SP = self.REG[7]
         # FL 00000LGE L:LessThan, G: GreaterThan, E: Equal
         self.FL = [0] * 8
+        self.instruction_length = 0
         #Initialize branch table
         self.BT = {
             0b10000010: self.handle_LDI,
@@ -36,7 +37,7 @@ class CPU:
             0b01010111: self.handle_JGT,
             0b01011000: self.handle_JLT,
             0b01011001: self.handle_JLE,
-            0b01011010: self.handle_JEQ,
+            0b01010101: self.handle_JEQ,
             0b01010110: self.handle_JNE
         }
 
@@ -83,16 +84,24 @@ class CPU:
         elif op == "AND":
             self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
         elif op == "CMP":
+            # print("rega", self.REG[reg_a])
+            # print("regb", self.REG[reg_b])
             if self.REG[reg_a] == self.REG[reg_b]:
                 #Equal Flag
                 self.FL[7] = 1
-            elif self.REG[reg_a] > self.REG[reg_b]:
+            else:
+                self.FL[7] = 0
+            if self.REG[reg_a] > self.REG[reg_b]:
                 #Greater Flag
                 self.FL[6] = 1
-            elif self.REG[reg_a] < self.REG[reg_b]:
+            else:
+                self.FL[6] = 0
+            if self.REG[reg_a] < self.REG[reg_b]:
                 #Less Flag
                 self.FL[5] = 1
-
+            else:
+                self.FL[5] = 0
+            # print(self.FL)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -118,108 +127,147 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        # counter = 0
         while not self.HALTED:
             IR = self.RAM[self.PC]
-            instruction_length = ((IR >> 6) & 0b11) + 1
-            if IR == 0b00010001 or IR == 0b01010000:
-                instruction_length = 0
+            self.instruction_length = ((IR >> 6) & 0b11) + 1
+            # if IR == 0b00010001 or IR == 0b01010000 or IR == 0b01010110:
+            #     instruction_length = 0
             self.BT[IR]() #grab the appropriate function from the branch table
-            self.PC += instruction_length
+            self.PC += self.instruction_length
+            # print(self.PC)
+            # counter += 1
+            # print("Operation#", counter)
+            # print("RAM:", self.RAM[:64])
+            # print("END", self.RAM[200:])
+            # print (self.REG)
 
     ## ALL INSTRUCTION COMMANDS ##
     def handle_LDI(self):
+        # print("LDI")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.REG[operand_a] = operand_b
     def handle_PRN(self):
+        # print("PRN")
         operand_a = self.ram_read(self.PC + 1)
         print(self.REG[operand_a])
     def handle_HLT(self):
+        # print("HLT")
         self.HALTED = True
     def handle_ADD(self):
+        # print("ADD")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("ADD", operand_a, operand_b)
     def handle_SUB(self):
+        # print("SUB")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("SUB", operand_a, operand_b)
     def handle_MUL(self):
+        # print("MUL")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("MUL", operand_a, operand_b)
     def handle_DIV(self):
+        # print("DIV")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("DIV", operand_a, operand_b)
     def handle_INC(self):
+        # print("INC")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("INC", operand_a, operand_b)
     def handle_DEC(self):
+        # print("DEC")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("DEC", operand_a, operand_b)
     def handle_AND(self):
+        # print("AND")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("AND", operand_a, operand_b)
     def handle_CMP(self):
+        # print("CMP")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("CMP", operand_a, operand_b)
     def handle_PUSH(self):
+        # print("PUSH")
         operand_a = self.ram_read(self.PC + 1)
         self.REG[7] -= 1
         self.RAM[self.REG[7]] = self.REG[operand_a]
         self.REG[operand_a] = 0
     def handle_POP(self):
+        # print("POP")
         operand_a = self.ram_read(self.PC + 1)
         self.REG[operand_a] = self.RAM[self.REG[7]]
         self.REG[7] += 1
     def handle_CALL(self):
+        # print("CALL")
         operand_a = self.ram_read(self.PC + 1)
         #put return location on the stack
         self.REG[7] -= 1
         self.RAM[self.REG[7]] = self.PC + 2
         #move to location stored in reg
         self.PC = self.REG[operand_a]
+        self.instruction_length = 0
     def handle_RET(self):
+        # print("RET")
         self.PC = self.RAM[self.REG[7]]
         self.REG[7] += 1
+        self.instruction_length = 0
     def handle_ST(self):
+        # print("ST")
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.REG[operand_b] = self.REG[operand_a]
     def handle_JMP(self):
+        # print("ST")
         operand_a = self.ram_read(self.PC + 1)
         self.PC = self.REG[operand_a]
-
-
+        self.instruction_length = 0
     def handle_JGT(self):
+        # print("JGT")
         operand_a = self.ram_read(self.PC + 1)
             # LessThan Flag
-            if self.FL[6] == 1:
-                self.PC = self.REG[operand_a]    
+        if self.FL[6] == 1:
+            self.PC = self.REG[operand_a]
+            self.instruction_length = 0    
     def handle_JLT(self):
+        # print("JLT")
         operand_a = self.ram_read(self.PC + 1)
         # LessThan Flag
         if self.FL[5] == 1:
             self.PC = self.REG[operand_a]
+            self.instruction_length = 0
     def handle_JLE(self):
+        # print("JLE")
         operand_a = self.ram_read(self.PC + 1)
         #Equals flag or LessThan
         if self.FL[5] == 1 or self.FL[7] == 1:
             self.PC = self.REG[operand_a]
+            self.instruction_length = 0
     def handle_JEQ(self):
+        # print("JEQ")
         operand_a = self.ram_read(self.PC + 1)
         #Equals flag
         if self.FL[7] == 1:
             self.PC = self.REG[operand_a]
+            self.instruction_length = 0
     def handle_JNE(self):
+        # print("JNE")
         operand_a = self.ram_read(self.PC + 1)
+        # print('op_a', operand_a)
+        # print('FL', self.FL)
+        # print("reg", self.REG[operand_a])
         #Equals flag
         if self.FL[7] == 0:
             self.PC = self.REG[operand_a]
+            self.instruction_length = 0
+        # print("PC", self.PC)
         
     
