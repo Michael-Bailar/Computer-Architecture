@@ -27,6 +27,12 @@ class CPU:
             0b01100101: self.handle_INC,
             0b01100110: self.handle_DEC,
             0b10101000: self.handle_AND,
+            0b10101010: self.handle_OR,
+            0b10101011: self.handle_XOR,
+            0b01101001: self.handle_NOT,
+            0b10101100: self.handle_SHL,
+            0b10101101: self.handle_SHR,
+            0b10100100: self.handle_MOD,
             0b10100111: self.handle_CMP,
             0b01000101: self.handle_PUSH,
             0b01000110: self.handle_POP,
@@ -83,6 +89,23 @@ class CPU:
             self.REG[reg_a] -= 1
         elif op == "AND":
             self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
+        elif op == "OR":
+            self.REG[reg_a] = self.REG[reg_a] | self.REG[reg_b] 
+        elif op == "XOR":
+            self.REG[reg_a] = self.REG[reg_a] ^ self.REG[reg_b]
+        elif op == "NOT":
+            self.REG[reg_a] = ~ self.REG[reg_a]
+        elif op == "SHL":
+            self.REG[reg_a] = self.REG[reg_a] << self.REG[reg_b]
+        elif op == "SHR":
+            self.REG[reg_a] = self.REG[reg_a] >> self.REG[reg_b]
+        elif op == "MOD":
+            if self.REG[reg_b] == 0:
+                remainder = self.REG[reg_a] % self.REG[reg_b]
+                self.REG[reg_a] = remainder
+            else:
+                print("Command -MOD- failed. Cannot divide by Zero")
+                self.BT[0b00000001]()
         elif op == "CMP":
             # print("rega", self.REG[reg_a])
             # print("regb", self.REG[reg_b])
@@ -190,6 +213,36 @@ class CPU:
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("AND", operand_a, operand_b)
+    def handle_OR(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("OR", operand_a, operand_b)
+    def handle_XOR(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("XOR", operand_a, operand_b)
+    def handle_NOT(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("NOT", operand_a, operand_b)
+    def handle_SHL(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("SHL", operand_a, operand_b)
+    def handle_SHR(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("SHR", operand_a, operand_b)
+    def handle_MOD(self):
+        # print("AND")
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("MOD", operand_a, operand_b)
     def handle_CMP(self):
         # print("CMP")
         operand_a = self.ram_read(self.PC + 1)
