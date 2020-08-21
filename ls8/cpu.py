@@ -23,6 +23,7 @@ class CPU:
             0b10100001: self.handle_SUB,
             0b10100010: self.handle_MUL,
             0b10100011: self.handle_DIV,
+            0b01100101: self.handle_INC,
             0b01100110: self.handle_DEC,
             0b10101000: self.handle_AND,
             0b10100111: self.handle_CMP,
@@ -32,8 +33,10 @@ class CPU:
             0b00010001: self.handle_RET,
             0b10000100: self.handle_ST,
             0b01010100: self.handle_JMP,
+            0b01010111: self.handle_JGT,
             0b01011000: self.handle_JLT,
             0b01011001: self.handle_JLE,
+            0b01011010: self.handle_JEQ,
             0b01010110: self.handle_JNE
         }
 
@@ -73,8 +76,10 @@ class CPU:
             self.REG[reg_a] = self.REG[reg_a] * self.REG[reg_b]
         elif op == "DIV":
             self.REG[reg_a] //= self.REG[reg_b]
-        elif op == "DEC":
+        elif op == "INC":
             self.REG[reg_a] += 1
+        elif op == "DEC":
+            self.REG[reg_a] -= 1
         elif op == "AND":
             self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
         elif op == "CMP":
@@ -147,6 +152,10 @@ class CPU:
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.alu("DIV", operand_a, operand_b)
+    def handle_INC(self):
+        operand_a = self.ram_read(self.PC + 1)
+        operand_b = self.ram_read(self.PC + 2)
+        self.alu("INC", operand_a, operand_b)
     def handle_DEC(self):
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
@@ -185,6 +194,13 @@ class CPU:
     def handle_JMP(self):
         operand_a = self.ram_read(self.PC + 1)
         self.PC = self.REG[operand_a]
+
+
+    def handle_JGT(self):
+        operand_a = self.ram_read(self.PC + 1)
+            # LessThan Flag
+            if self.FL[6] == 1:
+                self.PC = self.REG[operand_a]    
     def handle_JLT(self):
         operand_a = self.ram_read(self.PC + 1)
         # LessThan Flag
@@ -192,13 +208,18 @@ class CPU:
             self.PC = self.REG[operand_a]
     def handle_JLE(self):
         operand_a = self.ram_read(self.PC + 1)
+        #Equals flag or LessThan
+        if self.FL[5] == 1 or self.FL[7] == 1:
+            self.PC = self.REG[operand_a]
+    def handle_JEQ(self):
+        operand_a = self.ram_read(self.PC + 1)
         #Equals flag
-        if self.FL[5] == 1:
+        if self.FL[7] == 1:
             self.PC = self.REG[operand_a]
     def handle_JNE(self):
         operand_a = self.ram_read(self.PC + 1)
         #Equals flag
-        if self.FL[6] == 0:
+        if self.FL[7] == 0:
             self.PC = self.REG[operand_a]
         
     
