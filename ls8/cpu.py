@@ -100,7 +100,7 @@ class CPU:
         elif op == "SHR":
             self.REG[reg_a] = self.REG[reg_a] >> self.REG[reg_b]
         elif op == "MOD":
-            if self.REG[reg_b] == 0:
+            if self.REG[reg_b] != 0:
                 remainder = self.REG[reg_a] % self.REG[reg_b]
                 self.REG[reg_a] = remainder
             else:
