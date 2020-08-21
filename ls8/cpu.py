@@ -12,7 +12,8 @@ class CPU:
         self.PC = 0
         self.HALTED = False
         self.SP = self.REG[7]
-        self.FL = 0
+        # FL 00000LGE L:LessThan, G: GreaterThan, E: Equal
+        self.FL = [0] * 8
         #Initialize branch table
         self.BT = {
             0b10000010: self.handle_LDI,
@@ -30,6 +31,10 @@ class CPU:
             0b01010000: self.handle_CALL,
             0b00010001: self.handle_RET,
             0b10000100: self.handle_ST,
+            0b01010100: self.handle_JMP,
+            0b01011000: self.handle_JLT,
+            0b01011001: self.handle_JLE,
+            0b01010110: self.handle_JNE
         }
 
     def ram_write(self, mdr, mar):
@@ -74,11 +79,15 @@ class CPU:
             self.REG[reg_a] = self.REG[reg_a] & self.REG[reg_b]
         elif op == "CMP":
             if self.REG[reg_a] == self.REG[reg_b]:
-                self.FL = 0b00000001
+                #Equal Flag
+                self.FL[7] = 1
             elif self.REG[reg_a] > self.REG[reg_b]:
-                self.FL = 0b00000010
+                #Greater Flag
+                self.FL[6] = 1
             elif self.REG[reg_a] < self.REG[reg_b]:
-                self.FL = 0b00000100
+                #Less Flag
+                self.FL[5] = 1
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -173,3 +182,23 @@ class CPU:
         operand_a = self.ram_read(self.PC + 1)
         operand_b = self.ram_read(self.PC + 2)
         self.REG[operand_b] = self.REG[operand_a]
+    def handle_JMP(self):
+        operand_a = self.ram_read(self.PC + 1)
+        self.PC = self.REG[operand_a]
+    def handle_JLT(self):
+        operand_a = self.ram_read(self.PC + 1)
+        # LessThan Flag
+        if self.FL[5] == 1:
+            self.PC = self.REG[operand_a]
+    def handle_JLE(self):
+        operand_a = self.ram_read(self.PC + 1)
+        #Equals flag
+        if self.FL[5] == 1:
+            self.PC = self.REG[operand_a]
+    def handle_JNE(self):
+        operand_a = self.ram_read(self.PC + 1)
+        #Equals flag
+        if self.FL[6] == 0:
+            self.PC = self.REG[operand_a]
+        
+    
